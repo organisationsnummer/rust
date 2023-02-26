@@ -1,14 +1,13 @@
 #[macro_use]
 extern crate lazy_static;
 
+use personnummer::{Personnummer, PersonnummerError};
 use regex::{Match, Regex};
 use std::{convert::TryFrom, error::Error, fmt};
 
 lazy_static! {
-    static ref ORG_REGEX: Regex = Regex::new(
-        r"(?x)^(\d{2}){0,1}(\d{2})(\d{2})(\d{2})([-+]?)?(\d{3})(\d)$"
-    )
-    .unwrap();
+    static ref ORG_REGEX: Regex =
+        Regex::new(r"(?x)^(\d{2}){0,1}(\d{2})(\d{2})(\d{2})([-+]?)?(\d{3})(\d)$").unwrap();
 }
 
 #[derive(Debug)]
@@ -26,8 +25,10 @@ impl fmt::Display for OrganisationsnummerError {
 
 impl Error for OrganisationsnummerError {}
 
+#[allow(dead_code)]
 /// Organisationsnummer holds relevant data to check for valid organization numbers.
 pub struct Organisationsnummer {
+    personnummer: Option<Personnummer>,
     number: String,
 }
 
@@ -44,7 +45,7 @@ impl TryFrom<&str> for Organisationsnummer {
 
         let prefix = match caps.get(1) {
             Some(m) => match_to_u32(Some(m)),
-            None => 0
+            None => 0,
         };
 
         // May only be prefixed with 16.
@@ -65,12 +66,14 @@ impl TryFrom<&str> for Organisationsnummer {
         if second < 10 {
             return Err(OrganisationsnummerError::InvalidInput);
         }
+
         // Luhn checksum must be valid.
         if !luhn(org.to_string().replace("-", "")) {
             return Err(OrganisationsnummerError::InvalidInput);
         }
 
-        return Ok(Organisationsnummer{
+        return Ok(Organisationsnummer {
+            personnummer: None,
             number: org.to_string().replace("-", ""),
         });
     }
@@ -79,12 +82,18 @@ impl TryFrom<&str> for Organisationsnummer {
 impl Organisationsnummer {
     /// Returns a new instance of a Organisationsnummer.
     pub fn new(org: &str) -> Result<Organisationsnummer, OrganisationsnummerError> {
-        Organisationsnummer::try_from(org)
+        match Personnummer::new(org) {
+            Ok(pnr) => Ok(Organisationsnummer {
+                personnummer: Some(pnr),
+                number: org.to_string().replace("-", ""),
+            }),
+            Err(_) => Organisationsnummer::try_from(org),
+        }
     }
 
     /// Same as new().
     pub fn parse(org: &str) -> Result<Organisationsnummer, OrganisationsnummerError> {
-        Organisationsnummer::try_from(org)
+        Organisationsnummer::new(org)
     }
 
     /// Validate a Organisationsnummer. The validation requires a valid Luhn checksum.
@@ -92,22 +101,40 @@ impl Organisationsnummer {
         true
     }
 
-    // Format organization number with or without separator.
+    /// Format organization number with or without separator.
     pub fn format(&self, separator: Option<bool>) -> String {
+        let number = match &self.personnummer {
+            Some(pnr) => pnr.format().long()[2..13].to_string().replace("-", ""),
+            None => self.number.clone(),
+        };
+
         if separator.unwrap_or(true) {
-            return format!("{}-{}",&self.number[..6],&self.number[6..])
+            return format!("{}-{}", &number[..6], &number[6..]);
         }
 
-        return self.number.clone()
+        number.clone()
     }
 
-    // Get the organization type.
+    /// Get the organization type.
     pub fn r#type(&self) -> String {
-        let first = self.number.chars().next().unwrap().to_digit(10).unwrap_or(0);
+        let first = match &self.personnummer {
+            Some(_) => 0,
+            None => self
+                .number
+                .chars()
+                .next()
+                .unwrap()
+                .to_digit(10)
+                .unwrap_or(0),
+        };
+
         let r#type = match first {
+            0 => "Enskild firma",
             1 => "Dödsbon",
             2 => "Stat, landsting, kommun eller församling",
-            3 => "Utländska företag som bedriver näringsverksamhet eller äger fastigheter i Sverige",
+            3 => {
+                "Utländska företag som bedriver näringsverksamhet eller äger fastigheter i Sverige"
+            }
             5 => "Aktiebolag",
             6 => "Enkelt bolag",
             7 => "Ekonomisk förening eller bostadsrättsförening",
@@ -115,12 +142,31 @@ impl Organisationsnummer {
             9 => "Handelsbolag, kommanditbolag och enkelt bolag",
             _ => "Okänt",
         };
+
         r#type.to_string()
     }
 
-    // Get organization vat number.
+    /// Get organization vat number.
     pub fn vat_number(&self) -> String {
-        return format!("SE{}01", self.number);
+        let number = match &self.personnummer {
+            Some(pnr) => pnr.format().long()[2..13].to_string().replace("-", ""),
+            None => self.number.clone(),
+        };
+
+        format!("SE{}01", number)
+    }
+
+    /// Get Personnummer instance.
+    pub fn personnummer(&self) -> Result<Personnummer, PersonnummerError> {
+        Personnummer::new(&self.number)
+    }
+
+    /// Determine if personnummer or not.
+    pub fn is_personnummer(&self) -> bool {
+        match &self.personnummer {
+            Some(_) => true,
+            None => false,
+        }
     }
 }
 
@@ -167,14 +213,17 @@ mod tests {
         let cases = vec!["556016-0680", "556103-4249", "5561034249", "559244-0001"];
 
         for tc in cases {
-            assert_eq!(Organisationsnummer::parse(tc).unwrap().r#type(), "Aktiebolag");
+            assert_eq!(
+                Organisationsnummer::parse(tc).unwrap().r#type(),
+                "Aktiebolag"
+            );
         }
     }
 
     #[test]
     fn test_valid_format_with_separator() {
         let cases = HashMap::from([
-            ("559244-0001","559244-0001"),
+            ("559244-0001", "559244-0001"),
             ("556016-0680", "556016-0680"),
             ("556103-4249", "556103-4249"),
             ("5561034249", "556103-4249"),
@@ -188,24 +237,54 @@ mod tests {
     #[test]
     fn test_valid_format_without_separator() {
         let cases = HashMap::from([
-            ("559244-0001","5592440001"),
+            ("559244-0001", "5592440001"),
             ("556016-0680", "5560160680"),
             ("556103-4249", "5561034249"),
             ("5561034249", "5561034249"),
         ]);
 
         for (key, value) in cases {
-            assert_eq!(Organisationsnummer::parse(key).unwrap().format(Some(false)), value);
+            assert_eq!(
+                Organisationsnummer::parse(key).unwrap().format(Some(false)),
+                value
+            );
         }
     }
 
     #[test]
     fn test_valid_vat_numbers() {
         let cases = HashMap::from([
-            ("559244-0001","SE559244000101"),
+            ("559244-0001", "SE559244000101"),
             ("556016-0680", "SE556016068001"),
             ("556103-4249", "SE556103424901"),
             ("5561034249", "SE556103424901"),
+        ]);
+
+        for (key, value) in cases {
+            assert_eq!(Organisationsnummer::parse(key).unwrap().vat_number(), value);
+        }
+    }
+
+    #[test]
+    fn test_valid_personal_identity_numbers() {
+        let cases = HashMap::from([("121212121212", "121212-1212")]);
+
+        for (key, value) in cases {
+            let key_org = Organisationsnummer::parse(key).unwrap();
+            assert!(key_org.valid());
+            assert_eq!(key_org.format(Some(false)), value.replace("-", ""));
+            assert_eq!(key_org.format(None), value);
+            assert!(key_org.is_personnummer());
+            assert!(Organisationsnummer::parse(value).unwrap().valid());
+            assert!(key_org.personnummer().unwrap().valid());
+        }
+    }
+
+    #[test]
+    fn test_valid_personal_identity_numbers_vat_number() {
+        let cases = HashMap::from([
+            ("121212121212", "SE121212121201"),
+            ("12121212-1212", "SE121212121201"),
         ]);
 
         for (key, value) in cases {
