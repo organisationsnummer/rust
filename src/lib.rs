@@ -32,6 +32,25 @@ pub struct Organisationsnummer {
     number: String,
 }
 
+/// FormattedOrganisationsnummer holds two formats of a normalized organization number, one long and
+/// one short format.
+pub struct FormattedOrganisationsnummer {
+    long: String,
+    short: String,
+}
+
+impl FormattedOrganisationsnummer {
+    /// Returns the long format of a formatted organization number with separator as a String.
+    pub fn long(&self) -> String {
+        self.long.clone()
+    }
+
+    /// Returns the short format of a formatted organization number without separator as a String.
+    pub fn short(&self) -> String {
+        self.short.clone()
+    }
+}
+
 impl TryFrom<&str> for Organisationsnummer {
     type Error = OrganisationsnummerError;
 
@@ -102,17 +121,16 @@ impl Organisationsnummer {
     }
 
     /// Format organization number with or without separator.
-    pub fn format(&self, separator: Option<bool>) -> String {
+    pub fn format(&self) -> FormattedOrganisationsnummer {
         let number = match &self.personnummer {
             Some(pnr) => pnr.format().long()[2..13].to_string().replace("-", ""),
             None => self.number.clone(),
         };
 
-        if separator.unwrap_or(true) {
-            return format!("{}-{}", &number[..6], &number[6..]);
+        FormattedOrganisationsnummer {
+            long: format!("{}-{}", &number[..6], &number[6..]),
+            short: number.clone(),
         }
-
-        number.clone()
     }
 
     /// Get the organization type.
@@ -230,7 +248,10 @@ mod tests {
         ]);
 
         for (key, value) in cases {
-            assert_eq!(Organisationsnummer::parse(key).unwrap().format(None), value);
+            assert_eq!(
+                Organisationsnummer::parse(key).unwrap().format().long(),
+                value
+            );
         }
     }
 
@@ -245,7 +266,7 @@ mod tests {
 
         for (key, value) in cases {
             assert_eq!(
-                Organisationsnummer::parse(key).unwrap().format(Some(false)),
+                Organisationsnummer::parse(key).unwrap().format().short(),
                 value
             );
         }
@@ -272,8 +293,8 @@ mod tests {
         for (key, value) in cases {
             let key_org = Organisationsnummer::parse(key).unwrap();
             assert!(key_org.valid());
-            assert_eq!(key_org.format(Some(false)), value.replace("-", ""));
-            assert_eq!(key_org.format(None), value);
+            assert_eq!(key_org.format().short(), value.replace("-", ""));
+            assert_eq!(key_org.format().long(), value);
             assert!(key_org.is_personnummer());
             assert!(Organisationsnummer::parse(value).unwrap().valid());
             assert!(key_org.personnummer().unwrap().valid());
