@@ -1,7 +1,13 @@
 [package]
-name = "rust"
-version = "0.1.0"
+name = "organisationsnummer"
+description = "Validate Swedish organization numbers"
+version = "1.0.0"
+authors = ["Fredrik Forsmo <fredrik.forsmo@gmail.com>"]
 edition = "2021"
+license = "MIT"
+readme = "README.md"
+homepage = "https://organisationsnummer.dev"
+repository = "https://github.com/organisationsnummer/rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
