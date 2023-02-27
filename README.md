@@ -12,7 +12,7 @@ use organisationsnummer::Organisationsnummer;
 
 fn main() {
     match Organisationsnummer::new("202100-5489") {
-        Ok(pnr) => println!("{}: {}", org.format().long(), org.valid()),
+        Ok(org) => println!("{}: {}", org.format().long(), org.valid()),
         Err(e) => panic!("Error: {}", e),
     }
 }
