@@ -67,9 +67,15 @@ impl TryFrom<&str> for Organisationsnummer {
             None => 0,
         };
 
+        let mut number = org.to_string().replace("-", "");
+
         // May only be prefixed with 16.
-        if prefix != 0 && prefix != 16 {
-            return Err(OrganisationsnummerError::InvalidInput);
+        if prefix != 0 {
+            if prefix != 16 {
+                return Err(OrganisationsnummerError::InvalidInput);
+            } else {
+                number = number[2..].to_string();
+            }
         }
 
         let third = match_to_u32(caps.get(3));
@@ -87,13 +93,13 @@ impl TryFrom<&str> for Organisationsnummer {
         }
 
         // Luhn checksum must be valid.
-        if !luhn(org.to_string().replace("-", "")) {
+        if !luhn(number.clone()) {
             return Err(OrganisationsnummerError::InvalidInput);
         }
 
         return Ok(Organisationsnummer {
             personnummer: None,
-            number: org.to_string().replace("-", ""),
+            number: number.clone(),
         });
     }
 }
