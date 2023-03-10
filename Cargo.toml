@@ -1,13 +1,13 @@
 [package]
-name = "organisationsnummer"
-description = "Validate Swedish organization numbers"
-version = "1.0.0"
 authors = ["Fredrik Forsmo <fredrik.forsmo@gmail.com>"]
+description = "Validate Swedish organization numbers"
 edition = "2021"
-license = "MIT"
-readme = "README.md"
 homepage = "https://organisationsnummer.dev"
+license = "MIT"
+name = "organisationsnummer"
+readme = "README.md"
 repository = "https://github.com/organisationsnummer/rust"
+version = "1.0.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,3 +15,6 @@ repository = "https://github.com/organisationsnummer/rust"
 lazy_static = "1.4.0"
 personnummer = "3.1.1"
 regex = "1"
+reqwest = {version = "0.11.14", features = ["blocking", "json"]}
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0"
