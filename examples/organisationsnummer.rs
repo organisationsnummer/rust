@@ -1,21 +1,19 @@
-use organisationsnummer::{Organisationsnummer, OrganisationsnummerError};
+use personnummer::{Personnummer, PersonnummerError};
 use std::env;
 
-fn main() -> Result<(), OrganisationsnummerError> {
+fn main() -> Result<(), PersonnummerError> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage: cargo run --example organisationsnummer <organisationsnummer>");
-        return Err(OrganisationsnummerError::InvalidInput);
+        return Err(PersonnummerError::InvalidInput);
     }
 
-    let org = Organisationsnummer::new(&args[1])?;
+    let org = Personnummer::new(&args[1])?;
 
     if org.valid() {
         println!(
-            "The company with organization number {} is a {} and the vat number is {}",
+            "The company with organization number {}",
             org.format().long(),
-            org.r#type(),
-            org.vat_number()
         );
     } else {
         println!("invalid organization number provided");

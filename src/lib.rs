@@ -212,110 +212,156 @@ fn luhn(value: String) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use reqwest::blocking::get;
+    use serde::Deserialize;
     use std::collections::HashMap;
+
+    #[derive(Deserialize, Debug)]
+    struct TestItem {
+        input: String,
+        long_format: String,
+        short_format: String,
+        r#type: String,
+        vat_number: String,
+        valid: bool,
+    }
+
+    fn get_test_list() -> Vec<TestItem> {
+        let res = get(
+            "https://raw.githubusercontent.com/organisationsnummer/meta/main/testdata/list.json",
+        )
+        .unwrap();
+        let list = res.json::<Vec<TestItem>>().unwrap();
+        list
+    }
 
     #[test]
     fn test_invalid_input() {
-        let cases = vec!["556016-0681", "556103-4250", "5561034250"];
+        let list = get_test_list();
 
-        for tc in cases {
-            assert!(Organisationsnummer::parse(tc).is_err());
+        for item in list {
+            if item.valid {
+                continue;
+            }
+
+            assert!(Organisationsnummer::parse(item.input.as_str()).is_err());
         }
     }
 
     #[test]
     fn test_valid_organization_numbers() {
-        let cases = vec!["556016-0680", "556103-4249", "5561034249", "559244-0001"];
+        let list = get_test_list();
 
-        for tc in cases {
-            assert!(Organisationsnummer::parse(tc).unwrap().valid());
+        for item in list {
+            if !item.valid {
+                continue;
+            }
+
+            assert!(Organisationsnummer::parse(item.input.as_str())
+                .unwrap()
+                .valid());
         }
     }
 
     #[test]
-    fn test_valid_limited_companies() {
-        let cases = vec!["556016-0680", "556103-4249", "5561034249", "559244-0001"];
+    fn test_valid_organization_types() {
+        let list = get_test_list();
 
-        for tc in cases {
+        for item in list {
+            if !item.valid {
+                continue;
+            }
+
             assert_eq!(
-                Organisationsnummer::parse(tc).unwrap().r#type(),
-                "Aktiebolag"
+                Organisationsnummer::parse(item.input.as_str())
+                    .unwrap()
+                    .r#type(),
+                item.r#type,
             );
         }
     }
 
     #[test]
     fn test_valid_format_with_separator() {
-        let cases = HashMap::from([
-            ("559244-0001", "559244-0001"),
-            ("556016-0680", "556016-0680"),
-            ("556103-4249", "556103-4249"),
-            ("5561034249", "556103-4249"),
-        ]);
+        let list = get_test_list();
 
-        for (key, value) in cases {
+        for item in list {
+            if !item.valid {
+                continue;
+            }
+
             assert_eq!(
-                Organisationsnummer::parse(key).unwrap().format().long(),
-                value
+                Organisationsnummer::parse(item.input.as_str())
+                    .unwrap()
+                    .format()
+                    .long(),
+                item.long_format,
             );
         }
     }
 
     #[test]
     fn test_valid_format_without_separator() {
-        let cases = HashMap::from([
-            ("559244-0001", "5592440001"),
-            ("556016-0680", "5560160680"),
-            ("556103-4249", "5561034249"),
-            ("5561034249", "5561034249"),
-        ]);
+        let list = get_test_list();
 
-        for (key, value) in cases {
+        for item in list {
+            if !item.valid {
+                continue;
+            }
+
             assert_eq!(
-                Organisationsnummer::parse(key).unwrap().format().short(),
-                value
+                Organisationsnummer::parse(item.input.as_str())
+                    .unwrap()
+                    .format()
+                    .short(),
+                item.short_format,
             );
         }
     }
 
     #[test]
     fn test_valid_vat_numbers() {
-        let cases = HashMap::from([
-            ("559244-0001", "SE559244000101"),
-            ("556016-0680", "SE556016068001"),
-            ("556103-4249", "SE556103424901"),
-            ("5561034249", "SE556103424901"),
-        ]);
+        let list = get_test_list();
 
-        for (key, value) in cases {
-            assert_eq!(Organisationsnummer::parse(key).unwrap().vat_number(), value);
+        for item in list {
+            if !item.valid {
+                continue;
+            }
+
+            assert_eq!(
+                Organisationsnummer::parse(item.input.as_str())
+                    .unwrap()
+                    .vat_number(),
+                item.vat_number
+            );
         }
     }
 
     #[test]
     fn test_valid_personal_identity_numbers() {
-        let cases = HashMap::from([("121212121212", "121212-1212")]);
+        let list = get_test_list();
 
-        for (key, value) in cases {
-            let key_org = Organisationsnummer::parse(key).unwrap();
-            assert!(key_org.valid());
-            assert_eq!(key_org.format().short(), value.replace("-", ""));
-            assert_eq!(key_org.format().long(), value);
-            assert!(key_org.is_personnummer());
-            assert!(Organisationsnummer::parse(value).unwrap().valid());
-            assert!(key_org.personnummer().unwrap().valid());
-        }
-    }
+        for item in list {
+            if !item.valid {
+                continue;
+            }
 
-    #[test]
-    fn test_valid_personal_identity_numbers_vat_number() {
-        let cases = HashMap::from([
-            ("121212121212", "SE121212121201"),
-            ("12121212-1212", "SE121212121201"),
-        ]);
-
-        for (key, value) in cases {
-            assert_eq!(Organisationsnummer::parse(key).unwrap().vat_number(), value);
+            if item.r#type != "Enskild firma" {
+                continue;
+            }
+            println!("{}", item.long_format);
+            println!("{}", item.r#type);
+            assert!(Organisationsnummer::parse(item.long_format.as_str())
+                .unwrap()
+                .valid());
+            let org = Organisationsnummer::parse(item.input.as_str()).unwrap();
+            assert!(org.valid());
+            assert_eq!(org.format().short(), item.short_format);
+            assert_eq!(org.format().long(), item.long_format);
+            assert!(org.is_personnummer());
+            assert!(org.valid());
+            assert!(org.personnummer().unwrap().valid());
+            assert_eq!(org.vat_number(), item.vat_number)
         }
     }
 }
