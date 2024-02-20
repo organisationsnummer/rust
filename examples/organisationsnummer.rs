@@ -12,7 +12,8 @@ fn main() -> Result<(), OrganisationsnummerError> {
 
     if org.valid() {
         println!(
-            "The company with organization number {} is a {} and the vat number is {}",
+            "The company with organization short number {} and long number {} is a {} and the vat number is {}",
+            org.format().short(),
             org.format().long(),
             org.r#type(),
             org.vat_number()

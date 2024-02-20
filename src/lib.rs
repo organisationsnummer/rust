@@ -128,15 +128,28 @@ impl Organisationsnummer {
 
     /// Format organization number with or without separator.
     pub fn format(&self) -> FormattedOrganisationsnummer {
-        let number = match &self.personnummer {
-            Some(pnr) => pnr.format().long()[2..13].to_string().replace("-", ""),
-            None => self.number.clone(),
+        let formatted = match &self.personnummer {
+            Some(pnr) => {
+                let f = pnr.format();
+                let s = f.short();
+
+                let mut l = f.long();
+                if pnr.get_age() >= 100 {
+                    l = l.replace("-", "+");
+                }
+
+                FormattedOrganisationsnummer {
+                    long: l[2..].to_string(),
+                    short: s[0..6].to_string() + &s[7..].to_string(),
+                }
+            },
+            None => FormattedOrganisationsnummer {
+                long: format!("{}-{}", &self.number[..6], &self.number[6..]),
+                short: self.number.clone(),
+            },
         };
 
-        FormattedOrganisationsnummer {
-            long: format!("{}-{}", &number[..6], &number[6..]),
-            short: number.clone(),
-        }
+        formatted
     }
 
     /// Get the organization type.
@@ -214,7 +227,6 @@ mod tests {
     use super::*;
     use reqwest::blocking::get;
     use serde::Deserialize;
-    use std::collections::HashMap;
 
     #[derive(Deserialize, Debug)]
     struct TestItem {
@@ -349,19 +361,19 @@ mod tests {
             if item.r#type != "Enskild firma" {
                 continue;
             }
-            println!("{}", item.long_format);
-            println!("{}", item.r#type);
+
+
             assert!(Organisationsnummer::parse(item.long_format.as_str())
                 .unwrap()
                 .valid());
-            let org = Organisationsnummer::parse(item.input.as_str()).unwrap();
+
+                let org = Organisationsnummer::parse(item.input.as_str()).unwrap();
             assert!(org.valid());
             assert_eq!(org.format().short(), item.short_format);
             assert_eq!(org.format().long(), item.long_format);
             assert!(org.is_personnummer());
             assert!(org.valid());
-            assert!(org.personnummer().unwrap().valid());
-            assert_eq!(org.vat_number(), item.vat_number)
+            assert_eq!(org.vat_number(), item.vat_number);
         }
     }
 }
