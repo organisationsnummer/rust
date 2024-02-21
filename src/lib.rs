@@ -142,7 +142,7 @@ impl Organisationsnummer {
                     long: l[2..].to_string(),
                     short: s[0..6].to_string() + &s[7..].to_string(),
                 }
-            },
+            }
             None => FormattedOrganisationsnummer {
                 long: format!("{}-{}", &self.number[..6], &self.number[6..]),
                 short: self.number.clone(),
@@ -175,7 +175,7 @@ impl Organisationsnummer {
             5 => "Aktiebolag",
             6 => "Enkelt bolag",
             7 => "Ekonomisk förening eller bostadsrättsförening",
-            8 => "'Ideella förening och stiftelse",
+            8 => "Ideella förening och stiftelse",
             9 => "Handelsbolag, kommanditbolag och enkelt bolag",
             _ => "Okänt",
         };
@@ -186,7 +186,10 @@ impl Organisationsnummer {
     /// Get organization vat number.
     pub fn vat_number(&self) -> String {
         let number = match &self.personnummer {
-            Some(pnr) => pnr.format().long()[2..13].to_string().replace("-", ""),
+            Some(pnr) => pnr.format().long()[2..13]
+                .to_string()
+                .replace("-", "")
+                .replace("+", ""),
             None => self.number.clone(),
         };
 
@@ -362,12 +365,11 @@ mod tests {
                 continue;
             }
 
-
             assert!(Organisationsnummer::parse(item.long_format.as_str())
                 .unwrap()
                 .valid());
 
-                let org = Organisationsnummer::parse(item.input.as_str()).unwrap();
+            let org = Organisationsnummer::parse(item.input.as_str()).unwrap();
             assert!(org.valid());
             assert_eq!(org.format().short(), item.short_format);
             assert_eq!(org.format().long(), item.long_format);
