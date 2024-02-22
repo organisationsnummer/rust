@@ -110,7 +110,7 @@ impl Organisationsnummer {
         match Personnummer::new(org) {
             Ok(pnr) => Ok(Organisationsnummer {
                 personnummer: Some(pnr),
-                number: org.to_string().replace("-", ""),
+                number: org.to_string().replace("-", "").replace("+", ""),
             }),
             Err(_) => Organisationsnummer::try_from(org),
         }
