@@ -67,7 +67,7 @@ impl TryFrom<&str> for Organisationsnummer {
             None => 0,
         };
 
-        let mut number = org.to_string().replace("-", "");
+        let mut number = org.to_string().replace("-", "").replace("+", "");
 
         // May only be prefixed with 16.
         if prefix != 0 {
