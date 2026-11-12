@@ -5,6 +5,12 @@
 
 Validate Swedish organization numbers with [Rust](https://www.rust-lang.org/). Follows version 1.1 of the [specification](https://github.com/organisationsnummer/meta#package-specification-v11).
 
+## Installation
+
+```sh
+$ cargo add organisationsnummer
+```
+
 ## Usage
 
 ```rust
@@ -18,7 +24,7 @@ fn main() {
 }
 ```
 
-Fore more details, see [examples](examples) and/or run
+For more details, see [examples](examples) and/or run
 
 ```sh
 $ cargo run --example organisationsnummer <organisationsnummer>
