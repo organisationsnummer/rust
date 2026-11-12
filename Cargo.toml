@@ -1,5 +1,5 @@
 [package]
-authors = ["Fredrik Forsmo <fredrik.forsmo@gmail.com>"]
+authors = ["Johannes Tegnér <johannes@jitesoft.com>"]
 description = "Validate Swedish organization numbers"
 edition = "2021"
 homepage = "https://organisationsnummer.dev"
