@@ -1,14 +1,10 @@
-#[macro_use]
-extern crate lazy_static;
-
 use personnummer::{Personnummer, PersonnummerError};
 use regex::{Match, Regex};
-use std::{convert::TryFrom, error::Error, fmt};
+use std::{convert::TryFrom, error::Error, fmt, sync::LazyLock};
 
-lazy_static! {
-    static ref ORG_REGEX: Regex =
-        Regex::new(r"(?x)^(\d{2}){0,1}(\d{2})(\d{2})(\d{2})([-+]?)?(\d{3})(\d)$").unwrap();
-}
+static ORG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?x)^(\d{2}){0,1}(\d{2})(\d{2})(\d{2})([-+]?)?(\d{3})(\d)$").unwrap()
+});
 
 #[derive(Debug)]
 pub enum OrganisationsnummerError {
