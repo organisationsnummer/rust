@@ -93,10 +93,10 @@ impl TryFrom<&str> for Organisationsnummer {
             return Err(OrganisationsnummerError::InvalidInput);
         }
 
-        return Ok(Organisationsnummer {
+        Ok(Organisationsnummer {
             personnummer: None,
             number: number.clone(),
-        });
+        })
     }
 }
 
@@ -136,7 +136,7 @@ impl Organisationsnummer {
 
                 FormattedOrganisationsnummer {
                     long: l[2..].to_string(),
-                    short: s[0..6].to_string() + &s[7..].to_string(),
+                    short: s[0..6].to_string() + &s[7..],
                 }
             }
             None => FormattedOrganisationsnummer {
@@ -199,10 +199,7 @@ impl Organisationsnummer {
 
     /// Determine if personnummer or not.
     pub fn is_personnummer(&self) -> bool {
-        match &self.personnummer {
-            Some(_) => true,
-            None => false,
-        }
+        self.personnummer.is_some()
     }
 }
 
@@ -218,7 +215,8 @@ fn luhn(value: String) -> bool {
             acc + if value > 9 { value - 9 } else { value }
         });
 
-    (10 - (checksum as u8 % 10)) % 10 == 0
+    let remainder = checksum as u8 % 10;
+    remainder == 0
 }
 
 #[cfg(test)]
@@ -242,8 +240,7 @@ mod tests {
             "https://raw.githubusercontent.com/organisationsnummer/meta/main/testdata/list.json",
         )
         .unwrap();
-        let list = res.json::<Vec<TestItem>>().unwrap();
-        list
+        res.json::<Vec<TestItem>>().unwrap()
     }
 
     #[test]
