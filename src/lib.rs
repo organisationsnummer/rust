@@ -237,7 +237,7 @@ mod tests {
 
     fn get_test_list() -> Vec<TestItem> {
         let res = get(
-            "https://raw.githubusercontent.com/organisationsnummer/meta/main/testdata/list.json",
+            "https://raw.githubusercontent.com/organisationsnummer/meta/HEAD/testdata/list.json",
         )
         .unwrap();
         res.json::<Vec<TestItem>>().unwrap()
