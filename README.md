@@ -1,6 +1,6 @@
 # Organisationsnummer
 
-[![Crates.io](https://img.shields.io/crates/v/organisationsnummer.svg)](https://crates.io/crates/organisationsnummer)
+[![Crates.io](https://img.shields.io/crates/v/organisationsnummer-rs.svg)](https://crates.io/crates/organisationsnummer-rs)
 [![Rust](https://github.com/organisationsnummer/rust/actions/workflows/rust.yml/badge.svg)](https://github.com/organisationsnummer/rust/actions/workflows/rust.yml)
 
 Validate Swedish organization numbers with [Rust](https://www.rust-lang.org/). Follows version 1.1 of the [specification](https://github.com/organisationsnummer/meta#package-specification-v11).
@@ -8,8 +8,10 @@ Validate Swedish organization numbers with [Rust](https://www.rust-lang.org/). F
 ## Installation
 
 ```sh
-$ cargo add organisationsnummer
+$ cargo add organisationsnummer-rs
 ```
+
+Published on crates.io as [organisationsnummer-rs](https://crates.io/crates/organisationsnummer-rs). It replaces the old `organisationsnummer` crate, which can no longer be updated. To migrate, change the dependency in `Cargo.toml` to `organisationsnummer-rs`. The library is still imported as `organisationsnummer`, so no code changes are needed.
 
 ## Usage
 

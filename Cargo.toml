@@ -4,11 +4,15 @@ description = "Validate Swedish organization numbers"
 edition = "2021"
 homepage = "https://organisationsnummer.dev"
 license = "MIT"
-name = "organisationsnummer"
+name = "organisationsnummer-rs"
 readme = "README.md"
 repository = "https://github.com/organisationsnummer/rust"
 rust-version = "1.80"
-version = "1.0.1"
+version = "1.1.0"
+
+[lib]
+# Keep the library name so that `use organisationsnummer::...` works unchanged.
+name = "organisationsnummer"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
